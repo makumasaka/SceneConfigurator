@@ -1,76 +1,70 @@
-import { useMatcapTexture, Center, Text3D, OrbitControls } from '@react-three/drei'
-import { Perf } from 'r3f-perf'
-// import { useState } from 'react'
-import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
-import { useRef, useEffect } from 'react'
-
-const torusGeometry = new THREE.TorusGeometry( 1, 0.4, 16, 64 )
-const material = new THREE.MeshMatcapMaterial()
+import { MeshReflectorMaterial, Float, Text, Html, PivotControls, TransformControls, OrbitControls } from '@react-three/drei'
+import { useRef } from 'react'
 
 export default function Experience()
 {
-    const donutsGroup = useRef()
-
-    const [ matcapTexture ] = useMatcapTexture( '7B5254_E9DCC7_B19986_C8AC91', 256 )
-
-    useEffect(() => {
-        matcapTexture.colorSpace = THREE.SRGBColorSpace
-        matcapTexture.needsUpdate = true
-
-        material.matcap = matcapTexture
-        material.needsUpdate = true
-    }, [])
-
-    useFrame((state, delta) => {
-        for(const donut of donutsGroup.current.children) {
-            donut.rotation.y += delta * 0.1
-        }
-    })
+    const cube = useRef()
+    const sphere = useRef()
 
     return <>
+        <OrbitControls makeDefault enabled={ true } />
 
-        <Perf position="top-left" />
+        <directionalLight position={ [ 1, 2, 3 ] } intensity={ 4.5 } />
+        <ambientLight intensity={ 1.5 } />
 
-        <OrbitControls makeDefault />
+        <PivotControls 
+            anchor={ [ 0, 0, 0 ] }
+            depthTest={ false }
+            lineWidth={ 4 }
+            axisColors={ [ 'red', 'green', 'blue' ] }
+            scale={ 100 }
+            fixed={ true }
+        >
+            <mesh ref={ sphere } position-x={ -2 }>
+                <sphereGeometry />
+                <meshStandardMaterial color="orange" />
+                <Html 
+                    position={[1, 1, 0]}
+                    wrapperClass="label"
+                    center
+                    distanceFactor={ 10 }
+                    occlude={[ sphere, cube ]}
+                >This is a sphere</Html>
+            </mesh>
+        </PivotControls>
 
-        <Center>
-            <Text3D 
-                material={ material }
-                font={ '/fonts/helvetiker_regular.typeface.json' } 
-                size={ 0.5 }
-                height={ 0.2 }
-                curveSegments={ 12 }
-                bevelEnabled={ true }
-                bevelThickness={ 0.03 }
-                bevelSize={ 0.02 }
-                bevelOffset={ 0 }
-                bevelSegments={ 5 }
-            >
-                Hello World
-            </Text3D>
-        </Center>
+        <mesh ref={ cube } position-x={ 2 } scale={ 1.5 }>
+                <boxGeometry />
+                <meshStandardMaterial color="mediumpurple" />
+        </mesh>
 
-        <group ref={ donutsGroup }>
-            { [...Array(100)].map((value, index) =>
-                <mesh
-                    key={ index }
-                    geometry={ torusGeometry }
-                    material={ material }
-                    position={ [
-                        (Math.random() - 0.5) * 10,
-                        (Math.random() - 0.5) * 10,
-                        (Math.random() - 0.5) * 10
-                    ]}
-                    scale={ 0.2 + Math.random() * 0.2 }
-                    rotation={ [
-                        Math.random() * Math.PI * 2,
-                        Math.random() * Math.PI * 2,
-                        0
-                    ]}
+        <TransformControls object={ cube } />
+
+        <mesh position-y={ - 1 } rotation-x={ - Math.PI * 0.5 } scale={ 10 }>
+                <planeGeometry />
+                {/* <meshStandardMaterial color="greenyellow" /> */}
+                <MeshReflectorMaterial
+                    resolution={ 512 }
+                    blur={[ 1000, 1000 ]}
+                    mixBlur={ 1 }
+                    mirror={ 0.75 }
+                    color="greenyellow"
                 />
-            )}
-        </group>
+        </mesh>
 
+        <Float
+            speed={ 5 }
+            rotationIntensity={ 1 }
+            floatIntensity={ 2 }
+        >
+            <Text
+                font="./fonts/bangers-v20-latin-regular.woff"
+                fontSize={ 1 }
+                position-y={ 2 }
+                color="salmon"
+            >
+                I LOVE R3F
+            </Text>
+        </Float>
     </>
 }
