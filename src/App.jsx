@@ -80,21 +80,6 @@ export default function App() {
                             </ul>
                         </section>
 
-                        <section>
-                            <p className="sidebar-label">Animations</p>
-                            <div className="sidebar-menu-grid">
-                                {animationMenus.map((animation) => (
-                                    <button
-                                        key={animation.id}
-                                        type="button"
-                                        className={animation.id === activeAnimation ? 'sidebar-pill is-active' : 'sidebar-pill'}
-                                        onClick={() => setActiveAnimation(animation.id)}
-                                    >
-                                        {animation.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
                     </aside>
 
                     <section className="inspector-panel">
