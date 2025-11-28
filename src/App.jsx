@@ -22,80 +22,80 @@ export default function App() {
     const [activeAnimation, setActiveAnimation] = useState(animationMenus[0].id)
 
     return (
-        <div className="app-shell">
-            <header className="app-header">
-                <div>
-                    <p className="app-eyebrow">Scene Configurator</p>
-                    <h1>R3F Experience Hub</h1>
-                </div>
-                <nav>
-                    {navItems.map((item) => (
-                        <button
-                            key={item}
-                            type="button"
-                            className={item === activeNav ? 'nav-link is-active' : 'nav-link'}
-                            onClick={() => setActiveNav(item)}
-                        >
-                            {item}
-                        </button>
-                    ))}
-                </nav>
-                <div className="header-actions">
-                    <button type="button" className="ghost-btn">Reset Camera</button>
-                    <button type="button" className="primary-btn">Publish Scene</button>
-                </div>
-            </header>
+        <>
+            <div className="canvas-background">
+                <Canvas
+                    camera={{
+                        fov: 45,
+                        near: 0.1,
+                        far: 200,
+                        position: [-4, 3, 6]
+                    }}
+                >
+                    <Experience />
+                </Canvas>
+            </div>
 
-            <div className="app-body">
-                <aside className="app-sidebar">
-                    <section>
-                        <p className="sidebar-label">Camera Presets</p>
-                        <ul>
-                            {cameraPresets.map((preset) => (
-                                <li key={preset.id}>
+            <div className="app-shell">
+                <header className="app-header">
+                    <div>
+                        <p className="app-eyebrow">Scene Configurator</p>
+                        <h1>R3F Experience Hub</h1>
+                    </div>
+                    <nav>
+                        {navItems.map((item) => (
+                            <button
+                                key={item}
+                                type="button"
+                                className={item === activeNav ? 'nav-link is-active' : 'nav-link'}
+                                onClick={() => setActiveNav(item)}
+                            >
+                                {item}
+                            </button>
+                        ))}
+                    </nav>
+                    <div className="header-actions">
+                        <button type="button" className="ghost-btn">Reset Camera</button>
+                        <button type="button" className="primary-btn">Publish Scene</button>
+                    </div>
+                </header>
+
+                <div className="app-body">
+                    <aside className="app-sidebar">
+                        <section>
+                            <p className="sidebar-label">Camera Presets</p>
+                            <ul>
+                                {cameraPresets.map((preset) => (
+                                    <li key={preset.id}>
+                                        <button
+                                            type="button"
+                                            className={preset.id === selectedPreset ? 'sidebar-link is-active' : 'sidebar-link'}
+                                            onClick={() => setSelectedPreset(preset.id)}
+                                        >
+                                            <span>{preset.label}</span>
+                                            <small>{preset.description}</small>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+
+                        <section>
+                            <p className="sidebar-label">Animations</p>
+                            <div className="sidebar-menu-grid">
+                                {animationMenus.map((animation) => (
                                     <button
+                                        key={animation.id}
                                         type="button"
-                                        className={preset.id === selectedPreset ? 'sidebar-link is-active' : 'sidebar-link'}
-                                        onClick={() => setSelectedPreset(preset.id)}
+                                        className={animation.id === activeAnimation ? 'sidebar-pill is-active' : 'sidebar-pill'}
+                                        onClick={() => setActiveAnimation(animation.id)}
                                     >
-                                        <span>{preset.label}</span>
-                                        <small>{preset.description}</small>
+                                        {animation.label}
                                     </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
-
-                    <section>
-                        <p className="sidebar-label">Animations</p>
-                        <div className="sidebar-menu-grid">
-                            {animationMenus.map((animation) => (
-                                <button
-                                    key={animation.id}
-                                    type="button"
-                                    className={animation.id === activeAnimation ? 'sidebar-pill is-active' : 'sidebar-pill'}
-                                    onClick={() => setActiveAnimation(animation.id)}
-                                >
-                                    {animation.label}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-                </aside>
-
-                <main className="app-main">
-                    <section className="canvas-surface">
-                        <Canvas
-                            camera={{
-                                fov: 45,
-                                near: 0.1,
-                                far: 200,
-                                position: [-4, 3, 6]
-                            }}
-                        >
-                            <Experience />
-                        </Canvas>
-                    </section>
+                                ))}
+                            </div>
+                        </section>
+                    </aside>
 
                     <section className="inspector-panel">
                         <header>
@@ -120,8 +120,8 @@ export default function App() {
                             </article>
                         </div>
                     </section>
-                </main>
+                </div>
             </div>
-        </div>
+        </>
     )
 }
