@@ -138,6 +138,7 @@ body {
     flex-direction: column;
     gap: 1.5rem;
     backdrop-filter: blur(16px);
+    align-self: flex-start;
 }
 
 .app-sidebar ul {
@@ -216,6 +217,7 @@ body {
     flex-direction: column;
     gap: 1rem;
     backdrop-filter: blur(16px);
+    align-self: flex-start;
 }
 
 .inspector-card {
