@@ -1,43 +1,160 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import Experience from './Experience.jsx'
-
-const aduModels = [
-    { id: 'model1', label: 'Studio', sqft: '400', price: '$89,000', description: 'Perfect starter unit' },
-    { id: 'model2', label: 'One Bedroom', sqft: '600', price: '$129,000', description: 'Ideal for singles or couples' },
-    { id: 'model3', label: 'Two Bedroom', sqft: '800', price: '$169,000', description: 'Spacious family living' },
-    { id: 'model1', label: 'XL 8', sqft: '1,000', price: '$199,000', description: 'Premium living space' },
-    { id: 'model2', label: 'XL 10', sqft: '1,200', price: '$239,000', description: 'Luxury ADU experience' }
-]
-
-const exteriorFinishes = [
-    { id: 'siding-wood', label: 'Wood Siding', color: '#8B7355' },
-    { id: 'siding-metal', label: 'Metal Siding', color: '#6B7280' },
-    { id: 'siding-fiber', label: 'Fiber Cement', color: '#E5E7EB' },
-    { id: 'siding-stone', label: 'Stone Veneer', color: '#9CA3AF' }
-]
-
-const roofOptions = [
-    { id: 'roof-shingle', label: 'Asphalt Shingle', color: '#1F2937' },
-    { id: 'roof-metal', label: 'Metal Roof', color: '#4B5563' },
-    { id: 'roof-tile', label: 'Tile Roof', color: '#6B7280' }
-]
-
-const windowStyles = [
-    { id: 'windows-standard', label: 'Standard Windows' },
-    { id: 'windows-large', label: 'Large Windows' },
-    { id: 'windows-picture', label: 'Picture Windows' }
-]
+import * as THREE from 'three'
 
 export default function App() {
-    const [selectedModel, setSelectedModel] = useState(aduModels[0].id)
-    const [selectedFinish, setSelectedFinish] = useState(exteriorFinishes[0].id)
-    const [selectedRoof, setSelectedRoof] = useState(roofOptions[0].id)
-    const [selectedWindows, setSelectedWindows] = useState(windowStyles[0].id)
-    const [activePanel, setActivePanel] = useState('models')
-
-    const currentModel = aduModels.find(m => m.id === selectedModel)
-
+    const [isRunning, setIsRunning] = useState(false)
+    const [busSpeed, setBusSpeed] = useState(0)
+    const [targetSpeed, setTargetSpeed] = useState(30) // km/h
+    const [busPosition, setBusPosition] = useState([0, 0, 0])
+    const [busRotation, setBusRotation] = useState([0, 0, 0])
+    const [pathProgress, setPathProgress] = useState(0) // 0-1
+    const [pathPoints, setPathPoints] = useState([[0, 0, 0], [5, 0, 5], [10, 0, 0], [15, 0, -5], [20, 0, 0]])
+    const [editingPath, setEditingPath] = useState(false)
+    
+    // Agent visibility controls
+    const [showAgents, setShowAgents] = useState({
+        cars: true,
+        bikes: true,
+        pedestrians: true,
+        animals: true,
+        buildings: true
+    })
+    
+    // Agent data
+    const [agents, setAgents] = useState({
+        cars: [
+            { id: 1, position: [8, 0, 3], rotation: [0, Math.PI / 2, 0] },
+            { id: 2, position: [-5, 0, -3], rotation: [0, -Math.PI / 2, 0] },
+            { id: 3, position: [15, 0, -5], rotation: [0, 0, 0] }
+        ],
+        bikes: [
+            { id: 1, position: [3, 0, 4], rotation: [0, Math.PI / 4, 0] },
+            { id: 2, position: [-3, 0, -4], rotation: [0, -Math.PI / 4, 0] }
+        ],
+        pedestrians: [
+            { id: 1, position: [6, 0, 2], rotation: [0, Math.PI / 3, 0] },
+            { id: 2, position: [-4, 0, 5], rotation: [0, -Math.PI / 6, 0] },
+            { id: 3, position: [12, 0, -2], rotation: [0, Math.PI, 0] }
+        ],
+        animals: [
+            { id: 1, position: [2, 0, -3], rotation: [0, Math.PI / 2, 0], type: 'dog' },
+            { id: 2, position: [-6, 0, 2], rotation: [0, -Math.PI / 2, 0], type: 'cat' }
+        ],
+        buildings: [
+            { id: 1, position: [10, 0, 8], size: [3, 5, 3] },
+            { id: 2, position: [-8, 0, -8], size: [4, 6, 4] },
+            { id: 3, position: [15, 0, 5], size: [2, 4, 2] },
+            { id: 4, position: [-10, 0, 6], size: [3, 5, 3] }
+        ]
+    })
+    
+    const curveRef = useRef(null)
+    const animationFrameRef = useRef(null)
+    
+    // Calculate spline curve from path points
+    useEffect(() => {
+        if (pathPoints.length >= 2) {
+            const points = pathPoints.map(p => new THREE.Vector3(...p))
+            curveRef.current = new THREE.CatmullRomCurve3(points)
+        }
+    }, [pathPoints])
+    
+    // Bus movement animation
+    useEffect(() => {
+        if (!isRunning || !curveRef.current) {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current)
+            }
+            return
+        }
+        
+        let progress = pathProgress
+        const speedFactor = targetSpeed / 100 // Normalize speed
+        
+        const animate = () => {
+            if (!isRunning || !curveRef.current) return
+            
+            // Update progress along path
+            progress += speedFactor * 0.01
+            if (progress >= 1) {
+                progress = 0 // Loop back
+            }
+            
+            // Get position and tangent from curve
+            const position = curveRef.current.getPointAt(progress)
+            const tangent = curveRef.current.getTangentAt(progress)
+            
+            // Calculate rotation from tangent
+            const angle = Math.atan2(tangent.x, tangent.z)
+            
+            setBusPosition([position.x, position.y, position.z])
+            setBusRotation([0, angle, 0])
+            setPathProgress(progress)
+            
+            // Update speed (gradual acceleration/deceleration)
+            setBusSpeed(prev => {
+                if (prev < targetSpeed) {
+                    return Math.min(prev + 0.5, targetSpeed)
+                } else if (prev > targetSpeed) {
+                    return Math.max(prev - 0.5, targetSpeed)
+                }
+                return prev
+            })
+            
+            animationFrameRef.current = requestAnimationFrame(animate)
+        }
+        
+        animationFrameRef.current = requestAnimationFrame(animate)
+        
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current)
+            }
+        }
+    }, [isRunning, targetSpeed, pathProgress])
+    
+    // Calculate path statistics
+    const pathLength = curveRef.current ? curveRef.current.getLength() : 0
+    const distanceTraveled = pathLength * pathProgress
+    const distanceRemaining = pathLength * (1 - pathProgress)
+    const estimatedTimeRemaining = busSpeed > 0 ? (distanceRemaining / (busSpeed / 3.6)) : 0 // Convert km/h to m/s
+    
+    const handleStartStop = () => {
+        setIsRunning(!isRunning)
+        if (!isRunning) {
+            setBusSpeed(0) // Reset speed when starting
+        }
+    }
+    
+    const handleReset = () => {
+        setIsRunning(false)
+        setBusSpeed(0)
+        setPathProgress(0)
+        setBusPosition(pathPoints[0] || [0, 0, 0])
+        setBusRotation([0, 0, 0])
+    }
+    
+    const handleAddPathPoint = () => {
+        const lastPoint = pathPoints[pathPoints.length - 1]
+        const newPoint = [lastPoint[0] + 5, lastPoint[1], lastPoint[2] + 5]
+        setPathPoints([...pathPoints, newPoint])
+    }
+    
+    const handleRemovePathPoint = () => {
+        if (pathPoints.length > 2) {
+            setPathPoints(pathPoints.slice(0, -1))
+        }
+    }
+    
+    const toggleAgentVisibility = (agentType) => {
+        setShowAgents(prev => ({
+            ...prev,
+            [agentType]: !prev[agentType]
+        }))
+    }
+    
     return (
         <>
             <div className="canvas-background">
@@ -45,15 +162,20 @@ export default function App() {
                     camera={{
                         fov: 50,
                         near: 0.1,
-                        far: 200,
-                        position: [0, 5, 10]
+                        far: 500,
+                        position: [15, 10, 15]
                     }}
                 >
-                    <Experience 
-                        modelId={selectedModel}
-                        finishId={selectedFinish}
-                        roofId={selectedRoof}
-                        windowsId={selectedWindows}
+                    <Experience
+                        pathPoints={pathPoints}
+                        busPosition={busPosition}
+                        busRotation={busRotation}
+                        busSpeed={busSpeed}
+                        isRunning={isRunning}
+                        editingPath={editingPath}
+                        onPathUpdate={setPathPoints}
+                        agents={agents}
+                        showAgents={showAgents}
                     />
                 </Canvas>
             </div>
@@ -61,164 +183,166 @@ export default function App() {
             <div className="app-shell">
                 <header className="app-header">
                     <div>
-                        <p className="app-eyebrow">Dream Home Configurator</p>
-                        <h1>Design Your ADU</h1>
+                        <p className="app-eyebrow">Autonomous Bus System</p>
+                        <h1>Control & Monitoring Center</h1>
                     </div>
-                    <nav>
-                        <button
-                            type="button"
-                            className={activePanel === 'models' ? 'nav-link is-active' : 'nav-link'}
-                            onClick={() => setActivePanel('models')}
-                        >
-                            Models
-                        </button>
-                        <button
-                            type="button"
-                            className={activePanel === 'exterior' ? 'nav-link is-active' : 'nav-link'}
-                            onClick={() => setActivePanel('exterior')}
-                        >
-                            Exterior
-                        </button>
-                        <button
-                            type="button"
-                            className={activePanel === 'interior' ? 'nav-link is-active' : 'nav-link'}
-                            onClick={() => setActivePanel('interior')}
-                        >
-                            Interior
-                        </button>
-                    </nav>
-                    <div className="header-actions">
-                        <button type="button" className="ghost-btn">3D Tour</button>
-                        <button type="button" className="primary-btn">Get Quote</button>
+                    <div className="header-status">
+                        <div className={`status-indicator ${isRunning ? 'status-running' : 'status-stopped'}`}>
+                            <span className="status-dot"></span>
+                            {isRunning ? 'Running' : 'Stopped'}
+                        </div>
                     </div>
                 </header>
 
                 <div className="app-body">
+                    {/* Left Sidebar - Bus Controls */}
                     <aside className="app-sidebar">
-                        {activePanel === 'models' && (
-                            <section>
-                                <p className="sidebar-label">Choose Your Model</p>
-                                <ul>
-                                    {aduModels.map((model) => (
-                                        <li key={model.id}>
-                                            <button
-                                                type="button"
-                                                className={model.id === selectedModel ? 'sidebar-link is-active' : 'sidebar-link'}
-                                                onClick={() => setSelectedModel(model.id)}
-                                            >
-                                                <span>{model.label}</span>
-                                                <small>{model.sqft} sq ft · {model.price}</small>
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </section>
-                        )}
+                        <section>
+                            <p className="sidebar-label">Bus Control</p>
+                            <div className="control-group">
+                                <button
+                                    type="button"
+                                    className={`control-btn ${isRunning ? 'btn-stop' : 'btn-start'}`}
+                                    onClick={handleStartStop}
+                                >
+                                    {isRunning ? '⏸ Stop' : '▶ Start'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="control-btn btn-reset"
+                                    onClick={handleReset}
+                                >
+                                    ↺ Reset
+                                </button>
+                            </div>
+                            
+                            <div className="control-group">
+                                <label className="control-label">
+                                    Target Speed: {targetSpeed} km/h
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="60"
+                                    value={targetSpeed}
+                                    onChange={(e) => setTargetSpeed(Number(e.target.value))}
+                                    className="slider"
+                                />
+                            </div>
+                        </section>
 
-                        {activePanel === 'exterior' && (
-                            <>
-                                <section>
-                                    <p className="sidebar-label">Exterior Finish</p>
-                                    <div className="sidebar-menu-grid">
-                                        {exteriorFinishes.map((finish) => (
-                                            <button
-                                                key={finish.id}
-                                                type="button"
-                                                className={finish.id === selectedFinish ? 'sidebar-pill is-active' : 'sidebar-pill'}
-                                                onClick={() => setSelectedFinish(finish.id)}
-                                                style={{ 
-                                                    borderColor: finish.id === selectedFinish ? finish.color : undefined,
-                                                    background: finish.id === selectedFinish ? `${finish.color}20` : undefined
-                                                }}
-                                            >
-                                                {finish.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </section>
+                        <section>
+                            <p className="sidebar-label">Path Editing</p>
+                            <div className="control-group">
+                                <button
+                                    type="button"
+                                    className={`control-btn ${editingPath ? 'btn-active' : ''}`}
+                                    onClick={() => setEditingPath(!editingPath)}
+                                >
+                                    {editingPath ? '✓ Done Editing' : '✎ Edit Path'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="control-btn"
+                                    onClick={handleAddPathPoint}
+                                >
+                                    + Add Point
+                                </button>
+                                <button
+                                    type="button"
+                                    className="control-btn"
+                                    onClick={handleRemovePathPoint}
+                                    disabled={pathPoints.length <= 2}
+                                >
+                                    - Remove Point
+                                </button>
+                            </div>
+                            <div className="path-info">
+                                <small>Path Points: {pathPoints.length}</small>
+                                <small>Path Length: {pathLength.toFixed(1)}m</small>
+                            </div>
+                        </section>
 
-                                <section>
-                                    <p className="sidebar-label">Roof Style</p>
-                                    <div className="sidebar-menu-grid">
-                                        {roofOptions.map((roof) => (
-                                            <button
-                                                key={roof.id}
-                                                type="button"
-                                                className={roof.id === selectedRoof ? 'sidebar-pill is-active' : 'sidebar-pill'}
-                                                onClick={() => setSelectedRoof(roof.id)}
-                                                style={{ 
-                                                    borderColor: roof.id === selectedRoof ? roof.color : undefined,
-                                                    background: roof.id === selectedRoof ? `${roof.color}20` : undefined
-                                                }}
-                                            >
-                                                {roof.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                <section>
-                                    <p className="sidebar-label">Windows</p>
-                                    <div className="sidebar-menu-grid">
-                                        {windowStyles.map((window) => (
-                                            <button
-                                                key={window.id}
-                                                type="button"
-                                                className={window.id === selectedWindows ? 'sidebar-pill is-active' : 'sidebar-pill'}
-                                                onClick={() => setSelectedWindows(window.id)}
-                                            >
-                                                {window.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </section>
-                            </>
-                        )}
-
-                        {activePanel === 'interior' && (
-                            <section>
-                                <p className="sidebar-label">Interior Options</p>
-                                <div className="inspector-card">
-                                    <p className="inspector-title">Coming Soon</p>
-                                    <p>Interior customization options will be available soon. Configure flooring, cabinetry, and fixtures.</p>
-                                </div>
-                            </section>
-                        )}
+                        <section>
+                            <p className="sidebar-label">Agent Visibility</p>
+                            <div className="agent-controls">
+                                {Object.entries(showAgents).map(([type, visible]) => (
+                                    <label key={type} className="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={visible}
+                                            onChange={() => toggleAgentVisibility(type)}
+                                        />
+                                        <span className="checkbox-custom"></span>
+                                        <span className="checkbox-text">{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </section>
                     </aside>
 
-                    <section className="inspector-panel">
+                    {/* Right Panel - Monitoring Dashboard */}
+                    <section className="monitoring-panel">
                         <header>
-                            <p className="sidebar-label">Current Selection</p>
-                            <strong>{currentModel?.label}</strong>
+                            <p className="sidebar-label">Monitoring Dashboard</p>
+                            <strong>Real-time Status</strong>
                         </header>
-                        <div className="inspector-card">
-                            <div className="spec-grid">
-                                <div className="spec-item">
-                                    <span className="spec-label">Square Feet</span>
-                                    <span className="spec-value">{currentModel?.sqft}</span>
-                                </div>
-                                <div className="spec-item">
-                                    <span className="spec-label">Starting Price</span>
-                                    <span className="spec-value">{currentModel?.price}</span>
+                        
+                        <div className="monitoring-grid">
+                            <div className="monitor-card">
+                                <h3>Position</h3>
+                                <div className="monitor-value">
+                                    <div>X: {busPosition[0].toFixed(2)}m</div>
+                                    <div>Y: {busPosition[1].toFixed(2)}m</div>
+                                    <div>Z: {busPosition[2].toFixed(2)}m</div>
                                 </div>
                             </div>
-                            <p style={{ marginTop: '1rem', marginBottom: 0, fontSize: '0.9rem', color: '#8c94b2' }}>
-                                {currentModel?.description}
-                            </p>
-                        </div>
-                        <div className="inspector-grid">
-                            <article>
-                                <h3>3D Tour</h3>
-                                <p>Explore your ADU from every angle. Click and drag to rotate, scroll to zoom.</p>
-                            </article>
-                            <article>
-                                <h3>Customization</h3>
-                                <p>Choose from various exterior finishes, roof styles, and window options to match your vision.</p>
-                            </article>
-                            <article>
-                                <h3>Get Started</h3>
-                                <p>Ready to build? Click "Get Quote" to speak with our team about your custom ADU project.</p>
-                            </article>
+
+                            <div className="monitor-card">
+                                <h3>Speed</h3>
+                                <div className="monitor-value large">
+                                    {busSpeed.toFixed(1)} <span className="unit">km/h</span>
+                                </div>
+                            </div>
+
+                            <div className="monitor-card">
+                                <h3>Path Progress</h3>
+                                <div className="progress-bar-container">
+                                    <div className="progress-bar" style={{ width: `${pathProgress * 100}%` }}></div>
+                                </div>
+                                <div className="monitor-value">
+                                    {(pathProgress * 100).toFixed(1)}%
+                                </div>
+                            </div>
+
+                            <div className="monitor-card">
+                                <h3>Distance</h3>
+                                <div className="monitor-value">
+                                    <div>Traveled: {distanceTraveled.toFixed(1)}m</div>
+                                    <div>Remaining: {distanceRemaining.toFixed(1)}m</div>
+                                </div>
+                            </div>
+
+                            <div className="monitor-card">
+                                <h3>ETA</h3>
+                                <div className="monitor-value">
+                                    {estimatedTimeRemaining > 0 
+                                        ? `${Math.floor(estimatedTimeRemaining / 60)}:${Math.floor(estimatedTimeRemaining % 60).toString().padStart(2, '0')}`
+                                        : '--:--'
+                                    }
+                                </div>
+                            </div>
+
+                            <div className="monitor-card">
+                                <h3>System Status</h3>
+                                <div className="monitor-value">
+                                    <div className={`status-badge ${isRunning ? 'badge-active' : 'badge-inactive'}`}>
+                                        {isRunning ? '● Active' : '○ Inactive'}
+                                    </div>
+                                    <div>Path Points: {pathPoints.length}</div>
+                                    <div>Curve Length: {pathLength.toFixed(1)}m</div>
+                                </div>
+                            </div>
                         </div>
                     </section>
                 </div>
