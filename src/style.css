@@ -1,7 +1,7 @@
 :root {
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    color: #f5f7fb;
-    background-color: #05070b;
+    color: #1a1a1a;
+    background-color: #ffffff;
 }
 
 *,
@@ -13,7 +13,7 @@
 body {
     margin: 0;
     min-height: 100vh;
-    background: radial-gradient(circle at 20% 20%, #101523, #05070b 60%);
+    background: #f8f9fa;
 }
 
 #root {
@@ -28,6 +28,7 @@ body {
     width: 100%;
     height: 100%;
     z-index: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
 }
 
 .canvas-background canvas {
@@ -52,28 +53,33 @@ body {
 }
 
 .app-header {
-    background: rgba(11, 15, 25, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 1.25rem;
-    padding: 1.5rem;
+    padding: 1.5rem 2rem;
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
-    gap: 1.5rem;
-    backdrop-filter: blur(16px);
+    gap: 2rem;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
 }
 
 .app-eyebrow {
-    font-size: 0.85rem;
-    color: #8d96b5;
+    font-size: 0.75rem;
+    color: #6b7280;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.25rem;
+    font-weight: 500;
 }
 
 .app-header h1 {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.02em;
 }
 
 .app-header nav {
@@ -83,18 +89,25 @@ body {
 
 .nav-link {
     border: 1px solid transparent;
-    background: rgba(255, 255, 255, 0.04);
-    color: inherit;
-    border-radius: 999px;
-    padding: 0.5rem 1rem;
+    background: rgba(0, 0, 0, 0.02);
+    color: #4b5563;
+    border-radius: 0.75rem;
+    padding: 0.6rem 1.25rem;
     font-size: 0.95rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: #111827;
 }
 
 .nav-link.is-active {
-    border-color: rgba(129, 140, 248, 0.6);
-    background: rgba(129, 140, 248, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.08);
+    color: #2563eb;
 }
 
 .header-actions {
@@ -104,17 +117,33 @@ body {
 
 .ghost-btn,
 .primary-btn {
-    padding: 0.6rem 1.2rem;
-    border-radius: 0.85rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
-    color: inherit;
+    padding: 0.65rem 1.4rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.8);
+    color: #374151;
     cursor: pointer;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.ghost-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.15);
 }
 
 .primary-btn {
-    background: linear-gradient(120deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     border: none;
+    color: white;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.primary-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    transform: translateY(-1px);
 }
 
 .app-body {
@@ -129,16 +158,19 @@ body {
 }
 
 .app-sidebar {
-    width: 280px;
-    background: rgba(8, 10, 18, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    width: 300px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 1.25rem;
-    padding: 1.5rem;
+    padding: 1.75rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    backdrop-filter: blur(16px);
+    gap: 2rem;
+    backdrop-filter: blur(20px);
     align-self: flex-start;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
 }
 
 .app-sidebar ul {
@@ -152,112 +184,207 @@ body {
 
 .sidebar-label {
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.2em;
-    color: #7c859f;
-    margin: 0 0 0.8rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: #6b7280;
+    margin: 0 0 1rem;
+    font-weight: 600;
 }
 
 .sidebar-link {
     width: 100%;
     text-align: left;
-    padding: 0.65rem 0.85rem;
+    padding: 1rem 1.25rem;
     border-radius: 0.85rem;
-    border: 1px solid transparent;
-    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(0, 0, 0, 0.02);
     color: inherit;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sidebar-link:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-link span {
     display: block;
     font-weight: 600;
+    color: #111827;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
 }
 
 .sidebar-link small {
     display: block;
-    color: #8c94b2;
+    color: #6b7280;
     margin-top: 0.2rem;
+    font-size: 0.85rem;
 }
 
 .sidebar-link.is-active {
-    border-color: rgba(236, 72, 153, 0.6);
-    background: rgba(236, 72, 153, 0.12);
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.sidebar-link.is-active span {
+    color: #2563eb;
 }
 
 .sidebar-menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
 }
 
 .sidebar-pill {
     border-radius: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    background: rgba(255, 255, 255, 0.02);
-    padding: 0.65rem 0.8rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.02);
+    padding: 0.75rem 1rem;
     font-size: 0.85rem;
-    color: inherit;
+    color: #374151;
     cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    text-align: center;
+}
+
+.sidebar-pill:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
 }
 
 .sidebar-pill.is-active {
-    border-color: rgba(16, 185, 129, 0.5);
-    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    font-weight: 600;
 }
 
 .inspector-panel {
-    width: 350px;
+    width: 380px;
     margin-left: auto;
     border-radius: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    background: rgba(8, 10, 18, 0.9);
-    padding: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1.75rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    backdrop-filter: blur(16px);
+    gap: 1.25rem;
+    backdrop-filter: blur(20px);
     align-self: flex-start;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+.inspector-panel header {
+    margin-bottom: 0.5rem;
+}
+
+.inspector-panel header strong {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin-top: 0.5rem;
 }
 
 .inspector-card {
     border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 1rem;
-    background: rgba(10, 13, 20, 0.7);
-    line-height: 1.5;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    line-height: 1.6;
+}
+
+.spec-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.spec-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+}
+
+.spec-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
 }
 
 .inspector-title {
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.5rem;
     font-weight: 600;
+    color: #111827;
+    font-size: 1.1rem;
 }
 
 .inspector-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .inspector-grid article {
-    padding: 1rem;
+    padding: 1.25rem;
     border-radius: 0.85rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.02);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.inspector-grid article:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
 }
 
 .inspector-grid h3 {
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
 }
 
-.label > div {
-    background: #000000b0;
-    color: white;
-    position: absolute;
-    padding: 0.7rem 1rem;
-    border-radius: 999px;
-    font-family: Helvetica, sans-serif;
-    white-space: nowrap;
-    overflow: hidden;
-    user-select: none;
+.inspector-grid p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+/* Scrollbar styling */
+.app-sidebar::-webkit-scrollbar,
+.inspector-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.app-sidebar::-webkit-scrollbar-track,
+.inspector-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.app-sidebar::-webkit-scrollbar-thumb,
+.inspector-panel::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.app-sidebar::-webkit-scrollbar-thumb:hover,
+.inspector-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
 }
