@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Grid, Text, Line, Sphere, Box, Cylinder, PivotControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -45,10 +45,10 @@ function Bus({ position, rotation, speed = 0 }) {
 }
 
 // Spline path visualization
-function SplinePath({ points, color = "#00ff00", lineWidth = 2 }) {
+function SplinePath({ points, color = "#00ff00", lineWidth = 2, closed = true }) {
     if (!points || points.length < 2) return null
     
-    const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)))
+    const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)), closed)
     const curvePoints = curve.getPoints(200)
     const positions = curvePoints.map(p => [p.x, p.y, p.z])
     
@@ -58,6 +58,107 @@ function SplinePath({ points, color = "#00ff00", lineWidth = 2 }) {
             color={color}
             lineWidth={lineWidth}
         />
+    )
+}
+
+// Road component
+function Road({ start, end, width = 2, elevation = 0, color = "#333333", hasMarkings = true }) {
+    const direction = new THREE.Vector3(...end).sub(new THREE.Vector3(...start))
+    const length = direction.length()
+    const center = new THREE.Vector3(...start).add(new THREE.Vector3(...end)).multiplyScalar(0.5)
+    const angle = Math.atan2(direction.x, direction.z)
+    
+    return (
+        <group position={[center.x, elevation, center.z]} rotation={[0, angle, 0]}>
+            {/* Road surface */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                <planeGeometry args={[width, length]} />
+                <meshStandardMaterial color={color} />
+            </mesh>
+            
+            {/* Road markings */}
+            {hasMarkings && (
+                <>
+                    {/* Center line */}
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+                        <planeGeometry args={[0.1, length]} />
+                        <meshStandardMaterial color="#ffff00" />
+                    </mesh>
+                    {/* Side lines */}
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-width / 2, 0.01, 0]}>
+                        <planeGeometry args={[0.05, length]} />
+                        <meshStandardMaterial color="#ffffff" />
+                    </mesh>
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[width / 2, 0.01, 0]}>
+                        <planeGeometry args={[0.05, length]} />
+                        <meshStandardMaterial color="#ffffff" />
+                    </mesh>
+                </>
+            )}
+            
+            {/* Road barriers/sides for elevated roads */}
+            {elevation > 0.1 && (
+                <>
+                    <Box args={[0.2, 0.3, length]} position={[-width / 2 - 0.1, 0.15, 0]}>
+                        <meshStandardMaterial color="#666666" />
+                    </Box>
+                    <Box args={[0.2, 0.3, length]} position={[width / 2 + 0.1, 0.15, 0]}>
+                        <meshStandardMaterial color="#666666" />
+                    </Box>
+                </>
+            )}
+        </group>
+    )
+}
+
+// Highway/Overpass component
+function Highway({ start, end, width = 4, elevation = 0, color = "#2a2a2a" }) {
+    const direction = new THREE.Vector3(...end).sub(new THREE.Vector3(...start))
+    const length = direction.length()
+    const center = new THREE.Vector3(...start).add(new THREE.Vector3(...end)).multiplyScalar(0.5)
+    const angle = Math.atan2(direction.x, direction.z)
+    
+    return (
+        <group position={[center.x, elevation, center.z]} rotation={[0, angle, 0]}>
+            {/* Highway surface */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                <planeGeometry args={[width, length]} />
+                <meshStandardMaterial color={color} />
+            </mesh>
+            
+            {/* Highway markings */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+                <planeGeometry args={[0.15, length]} />
+                <meshStandardMaterial color="#ffff00" />
+            </mesh>
+            
+            {/* Side barriers */}
+            <Box args={[0.3, 0.5, length]} position={[-width / 2 - 0.15, 0.25, 0]}>
+                <meshStandardMaterial color="#444444" />
+            </Box>
+            <Box args={[0.3, 0.5, length]} position={[width / 2 + 0.15, 0.25, 0]}>
+                <meshStandardMaterial color="#444444" />
+            </Box>
+            
+            {/* Support pillars for elevated highways */}
+            {elevation > 0.1 && (
+                <>
+                    {Array.from({ length: Math.floor(length / 5) + 1 }).map((_, i) => {
+                        const zPos = -length / 2 + i * 5
+                        return (
+                            <group key={i}>
+                                <Cylinder args={[0.3, 0.3, elevation]} position={[-width / 2 - 0.5, elevation / 2, zPos]}>
+                                    <meshStandardMaterial color="#555555" />
+                                </Cylinder>
+                                <Cylinder args={[0.3, 0.3, elevation]} position={[width / 2 + 0.5, elevation / 2, zPos]}>
+                                    <meshStandardMaterial color="#555555" />
+                                </Cylinder>
+                            </group>
+                        )
+                    })}
+                </>
+            )}
+        </group>
     )
 }
 
@@ -178,6 +279,52 @@ function Building({ position, size = [2, 4, 2] }) {
     )
 }
 
+// Generate road network
+function generateRoadNetwork(numRoads = 5, areaSize = 40) {
+    const roads = []
+    const highways = []
+    
+    // Generate a grid-like road network with varying elevations
+    // Create both horizontal and vertical roads that cross each other
+    const numHorizontal = Math.ceil(numRoads / 2)
+    const numVertical = Math.floor(numRoads / 2)
+    const spacing = areaSize / (Math.max(numHorizontal, numVertical) + 1)
+    
+    // Generate horizontal roads
+    for (let i = 0; i < numHorizontal; i++) {
+        const y = -areaSize / 2 + (i + 1) * spacing
+        const isHighway = i % 3 === 0 // Every 3rd road is a highway
+        // Alternate elevations: ground level, elevated, ground level, etc.
+        const elevation = isHighway ? 2.5 : (i % 2 === 0 ? 0 : 1.5)
+        const start = [-areaSize / 2, elevation, y]
+        const end = [areaSize / 2, elevation, y]
+        
+        if (isHighway) {
+            highways.push({ start, end, width: 4, elevation })
+        } else {
+            roads.push({ start, end, width: 2, elevation })
+        }
+    }
+    
+    // Generate vertical roads
+    for (let i = 0; i < numVertical; i++) {
+        const x = -areaSize / 2 + (i + 1) * spacing
+        const isHighway = (i + numHorizontal) % 3 === 0 // Every 3rd road is a highway
+        // Alternate elevations opposite to horizontal roads to create crossings
+        const elevation = isHighway ? 2.5 : (i % 2 === 0 ? 1.5 : 0)
+        const start = [x, elevation, -areaSize / 2]
+        const end = [x, elevation, areaSize / 2]
+        
+        if (isHighway) {
+            highways.push({ start, end, width: 4, elevation })
+        } else {
+            roads.push({ start, end, width: 2, elevation })
+        }
+    }
+    
+    return { roads, highways }
+}
+
 export default function Experience({ 
     pathPoints = [],
     busPosition = [0, 0, 0],
@@ -187,10 +334,21 @@ export default function Experience({
     editingPath = false,
     onPathUpdate,
     agents = {},
-    showAgents = {}
+    showAgents = {},
+    numRoads = 5
 }) {
     const { camera } = useThree()
-    const [localPathPoints, setLocalPathPoints] = useState(pathPoints.length > 0 ? pathPoints : [[0, 0, 0], [5, 0, 5], [10, 0, 0]])
+    const [localPathPoints, setLocalPathPoints] = useState(pathPoints.length > 0 ? pathPoints : [
+        [0, 0, 0], 
+        [10, 0, 5], 
+        [15, 0, 0], 
+        [10, 0, -10], 
+        [-5, 0, -5],
+        [-5, 0, 5]
+    ])
+    
+    // Generate road network (memoized to avoid regeneration on every render)
+    const roadNetwork = useMemo(() => generateRoadNetwork(numRoads, 40), [numRoads])
     
     // Update local path when prop changes
     useEffect(() => {
@@ -254,9 +412,33 @@ export default function Experience({
                 <meshStandardMaterial color="#2a2a2a" />
             </mesh>
             
+            {/* Road Network */}
+            {roadNetwork.roads.map((road, index) => (
+                <Road
+                    key={`road-${index}`}
+                    start={road.start}
+                    end={road.end}
+                    width={road.width}
+                    elevation={road.elevation}
+                    color="#333333"
+                />
+            ))}
+            
+            {/* Highway Network */}
+            {roadNetwork.highways.map((highway, index) => (
+                <Highway
+                    key={`highway-${index}`}
+                    start={highway.start}
+                    end={highway.end}
+                    width={highway.width}
+                    elevation={highway.elevation}
+                    color="#2a2a2a"
+                />
+            ))}
+            
             {/* Spline path */}
             {localPathPoints.length >= 2 && (
-                <SplinePath points={localPathPoints} color="#00ff00" lineWidth={3} />
+                <SplinePath points={localPathPoints} color="#00ff00" lineWidth={3} closed={true} />
             )}
             
             {/* Path control points */}

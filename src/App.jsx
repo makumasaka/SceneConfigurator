@@ -10,8 +10,17 @@ export default function App() {
     const [busPosition, setBusPosition] = useState([0, 0, 0])
     const [busRotation, setBusRotation] = useState([0, 0, 0])
     const [pathProgress, setPathProgress] = useState(0) // 0-1
-    const [pathPoints, setPathPoints] = useState([[0, 0, 0], [5, 0, 5], [10, 0, 0], [15, 0, -5], [20, 0, 0]])
+    // Default path points forming a closed loop
+    const [pathPoints, setPathPoints] = useState([
+        [0, 0, 0], 
+        [10, 0, 5], 
+        [15, 0, 0], 
+        [10, 0, -10], 
+        [-5, 0, -5],
+        [-5, 0, 5]
+    ])
     const [editingPath, setEditingPath] = useState(false)
+    const [numRoads, setNumRoads] = useState(5)
     
     // Agent visibility controls
     const [showAgents, setShowAgents] = useState({
@@ -53,11 +62,11 @@ export default function App() {
     const curveRef = useRef(null)
     const animationFrameRef = useRef(null)
     
-    // Calculate spline curve from path points
+    // Calculate spline curve from path points (closed loop)
     useEffect(() => {
         if (pathPoints.length >= 2) {
             const points = pathPoints.map(p => new THREE.Vector3(...p))
-            curveRef.current = new THREE.CatmullRomCurve3(points)
+            curveRef.current = new THREE.CatmullRomCurve3(points, true) // closed = true for continuous loop
         }
     }, [pathPoints])
     
@@ -176,6 +185,7 @@ export default function App() {
                         onPathUpdate={setPathPoints}
                         agents={agents}
                         showAgents={showAgents}
+                        numRoads={numRoads}
                     />
                 </Canvas>
             </div>
@@ -260,6 +270,23 @@ export default function App() {
                             <div className="path-info">
                                 <small>Path Points: {pathPoints.length}</small>
                                 <small>Path Length: {pathLength.toFixed(1)}m</small>
+                            </div>
+                        </section>
+
+                        <section>
+                            <p className="sidebar-label">Road Network</p>
+                            <div className="control-group">
+                                <label className="control-label">
+                                    Number of Roads: {numRoads}
+                                </label>
+                                <input
+                                    type="range"
+                                    min="2"
+                                    max="20"
+                                    value={numRoads}
+                                    onChange={(e) => setNumRoads(Number(e.target.value))}
+                                    className="slider"
+                                />
                             </div>
                         </section>
 
