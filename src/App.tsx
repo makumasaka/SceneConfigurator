@@ -1,155 +1,46 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { SceneCanvas } from './components/SceneCanvas';
 import { LeftPanel } from './components/LeftPanel';
 import { RightPanel } from './components/RightPanel';
 import { Header } from './components/Header';
-import { AnimationControls } from './components/AnimationControls';
-
-export interface SceneParameters {
-  buildings: {
-    count: number;
-    type: 'residential' | 'commercial' | 'industrial';
-    height: number;
-  };
-  trees: {
-    count: number;
-    density: number;
-  };
-  pedestrians: {
-    count: number;
-    speed: number;
-  };
-  roads: {
-    lanes: number;
-    length: number;
-  };
-  vehicles: {
-    count: number;
-  };
-}
-
-export type CameraView = 'overview' | 'street' | 'aerial';
+import { useOperatorStore } from './store/useOperatorStore';
+import { telemetryService } from './services/telemetryService';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>('World');
-  const [cameraView, setCameraView] = useState<CameraView>('overview');
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [parameters, setParameters] = useState<SceneParameters>({
-    buildings: {
-      count: 10,
-      type: 'residential',
-      height: 15,
-    },
-    trees: {
-      count: 12,
-      density: 0.6,
-    },
-    pedestrians: {
-      count: 8,
-      speed: 1,
-    },
-    roads: {
-      lanes: 2,
-      length: 40,
-    },
-    vehicles: {
-      count: 3,
-    },
-  });
+  const setHeroBus = useOperatorStore((state) => state.setHeroBus);
+  const loadStuckScenario = useOperatorStore((state) => state.loadStuckScenario);
 
-  const handleExport = (format: 'json' | 'glb') => {
-    if (format === 'json') {
-      const data = JSON.stringify(parameters, null, 2);
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'robotaxi-scene-config.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    } else if (format === 'glb') {
-      // Mock GLB export
-      alert('GLB export functionality would export the 3D scene as a GLB file');
-    }
-  };
+  // Initialize telemetry service and load demo scenario on mount
+  useEffect(() => {
+    // Load stuck scenario on startup
+    loadStuckScenario();
 
-  const handleResetWorld = () => {
-    setParameters({
-      buildings: {
-        count: 10,
-        type: 'residential',
-        height: 15,
-      },
-      trees: {
-        count: 12,
-        density: 0.6,
-      },
-      pedestrians: {
-        count: 8,
-        speed: 1,
-      },
-      roads: {
-        lanes: 2,
-        length: 40,
-      },
-      vehicles: {
-        count: 3,
-      },
+    // Start telemetry service
+    telemetryService.start(2000);
+
+    // Subscribe to telemetry updates
+    const unsubscribe = telemetryService.subscribe((update) => {
+      setHeroBus(update);
     });
-    setIsAnimating(false);
-    setIsRecording(false);
-  };
 
-  const updateParameter = <K extends keyof SceneParameters>(
-    category: K,
-    updates: Partial<SceneParameters[K]>
-  ) => {
-    setParameters((prev) => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        ...updates,
-      },
-    }));
-  };
+    return () => {
+      telemetryService.stop();
+      unsubscribe();
+    };
+  }, [setHeroBus, loadStuckScenario]);
 
   return (
     <div className="w-screen h-screen bg-[#0a0a0a] flex flex-col overflow-hidden">
-      <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onResetWorld={handleResetWorld}
-        onExportConfig={() => handleExport('json')}
-      />
+      <Header />
       
       <div className="flex-1 flex relative overflow-hidden">
-        <LeftPanel
-          cameraView={cameraView}
-          setCameraView={setCameraView}
-          onExport={handleExport}
-        />
+        <LeftPanel />
         
         <div className="flex-1 relative">
-          <SceneCanvas
-            parameters={parameters}
-            cameraView={cameraView}
-            isAnimating={isAnimating}
-          />
-          
-          <AnimationControls
-            isAnimating={isAnimating}
-            setIsAnimating={setIsAnimating}
-            isRecording={isRecording}
-            setIsRecording={setIsRecording}
-          />
+          <SceneCanvas />
         </div>
         
-        <RightPanel
-          activeTab={activeTab}
-          parameters={parameters}
-          updateParameter={updateParameter}
-        />
+        <RightPanel />
       </div>
     </div>
   );
