@@ -76,6 +76,7 @@ export interface UIState {
 export interface TelemetryUpdate {
   timestamp: number;
   position?: Vector3D;
+  rotation?: number;
   velocity?: number;
   autonomyState?: AutonomyState;
   stuckReason?: StuckReason;

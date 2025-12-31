@@ -20,7 +20,31 @@ export default function App() {
 
     // Subscribe to telemetry updates
     const unsubscribe = telemetryService.subscribe((update) => {
-      setHeroBus(update);
+      // Update hero bus state with telemetry data
+      const updates: any = {
+        timestamp: update.timestamp,
+      };
+      
+      if (update.position) {
+        updates.position = update.position;
+      }
+      if (update.rotation !== undefined) {
+        updates.rotation = update.rotation;
+      }
+      if (update.velocity !== undefined) {
+        updates.velocity = update.velocity;
+      }
+      if (update.autonomyState) {
+        updates.autonomyState = update.autonomyState;
+      }
+      if (update.stuckReason !== undefined) {
+        updates.stuckReason = update.stuckReason;
+      }
+      if (update.batteryLevel !== undefined) {
+        updates.batteryLevel = update.batteryLevel;
+      }
+      
+      setHeroBus(updates);
     });
 
     return () => {

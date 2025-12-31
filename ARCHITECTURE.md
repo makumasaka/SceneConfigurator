@@ -82,7 +82,7 @@ telemetryService (mock)
   -> RightPanel displays new data
 ```
 
-### Path Creation Flow
+### Path Creation and Execution Flow
 ```
 1. User clicks "Draw Path" button
    -> setIsDrawingPath(true)
@@ -102,6 +102,27 @@ telemetryService (mock)
    -> plannerService.submitPath(path)
    -> Response updates path status
    -> UI reflects new status
+
+5. Path Accepted - Automatic Execution
+   -> handleExecutePath() called after 500ms
+   -> Convert path points to position array
+   -> telemetryService.simulateMovement(positions, duration)
+   -> Updates sent 60 times/second with:
+      - Interpolated position between waypoints
+      - Calculated rotation (heading) based on direction
+      - velocity = 2.5 m/s
+      - autonomyState = 'autonomous'
+   
+6. Bus Movement Rendering
+   -> Telemetry updates trigger setHeroBus()
+   -> HeroBus component receives new position/rotation
+   -> useFrame smoothly interpolates (lerp) to target
+   -> Bus appears to glide along path with proper heading
+   
+7. Execution Complete
+   -> Final telemetry update with velocity = 0
+   -> "Path execution complete!" message
+   -> Bus remains at final position
 ```
 
 ### Camera Follow Mode
@@ -121,12 +142,21 @@ telemetryService (mock)
 ## Mock Services
 
 ### TelemetryService
-- **Purpose**: Simulate real-time bus updates
+- **Purpose**: Simulate real-time bus updates and path execution
 - **Methods**:
-  - `start(intervalMs)` - Begin updates
-  - `stop()` - End updates
+  - `start(intervalMs)` - Begin periodic telemetry updates (default 2s)
+  - `stop()` - End all updates
   - `subscribe(callback)` - Listen for updates
-  - `simulateMovement(path, duration)` - Animate bus along path
+  - `simulateMovement(path, duration)` - Animate bus along path with 60fps updates
+  - `stopMovement()` - Cancel ongoing path execution
+- **Update Types**:
+  - Periodic: Battery level, general status (every 2s)
+  - Movement: Position, rotation, velocity (60fps during execution)
+- **Features**:
+  - Smooth interpolation between waypoints
+  - Automatic heading calculation from movement direction
+  - Gear and autonomy state updates
+  - Clean start/stop of movement simulation
 - **Integration Point**: Replace with WebSocket connection to real vehicle
 
 ### PlannerService  

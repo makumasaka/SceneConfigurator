@@ -93,6 +93,16 @@ src/
 5. Use **"Clear"** to start over
 6. Click **"Submit Path"** when ready
 
+### Path Execution
+
+Once a path is submitted and accepted:
+1. The vehicle will **automatically start moving** along the path after a brief delay
+2. Watch the bus smoothly follow the waypoints you placed
+3. The bus will rotate to face the direction of movement
+4. Progress is shown with "Executing Path" indicator
+5. The bus stops at the end of the path
+6. You can also click **"Execute Path Manually"** if auto-execution was disabled
+
 ### Path Statuses
 
 - **Draft** - Path is being created (blue)
@@ -120,9 +130,11 @@ Click **"Blocked Lane"** in the left panel to load a pre-configured stuck scenar
 The application includes mock backend services that simulate real-world behavior:
 
 ### Telemetry Service
-- Updates every 2 seconds
-- Provides bus position, velocity, battery level
-- Can simulate bus movement along paths
+- Updates every 2 seconds for basic telemetry
+- Provides bus position, rotation, velocity, battery level
+- Simulates smooth bus movement along accepted paths
+- Updates position/rotation 60 times per second during path execution
+- Calculates realistic heading based on movement direction
 
 ### Planner Service  
 - Validates path submissions

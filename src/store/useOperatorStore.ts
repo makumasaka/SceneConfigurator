@@ -13,6 +13,7 @@ interface OperatorStore {
   // Hero Bus State
   heroBus: HeroBusState;
   setHeroBus: (updates: Partial<HeroBusState>) => void;
+  updateHeroBusPosition: (position: { x: number; y: number; z: number }, rotation?: number) => void;
   
   // Path Suggestion State
   currentPath: PathSuggestion | null;
@@ -57,6 +58,15 @@ export const useOperatorStore = create<OperatorStore>((set, get) => ({
   setHeroBus: (updates) =>
     set((state) => ({
       heroBus: { ...state.heroBus, ...updates },
+    })),
+  
+  updateHeroBusPosition: (position, rotation) =>
+    set((state) => ({
+      heroBus: {
+        ...state.heroBus,
+        position,
+        ...(rotation !== undefined && { rotation }),
+      },
     })),
   
   // Path Suggestion State

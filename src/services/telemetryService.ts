@@ -54,9 +54,29 @@ class TelemetryService {
 
     const movementInterval = durationMs / steps;
 
-    const intervalId = setInterval(() => {
+    // Clear any existing movement simulation
+    if (this.movementIntervalId) {
+      clearInterval(this.movementIntervalId);
+    }
+
+    // Set gear to Drive and autonomy to autonomous
+    this.notifyCallbacks({
+      timestamp: Date.now(),
+      autonomyState: 'autonomous',
+      stuckReason: null,
+    });
+
+    this.movementIntervalId = setInterval(() => {
       if (currentStep >= steps) {
-        clearInterval(intervalId);
+        clearInterval(this.movementIntervalId!);
+        this.movementIntervalId = null;
+        
+        // Stop at end of path
+        this.notifyCallbacks({
+          timestamp: Date.now(),
+          velocity: 0,
+          autonomyState: 'autonomous',
+        });
         return;
       }
 
@@ -70,13 +90,19 @@ class TelemetryService {
 
       const position = {
         x: start.x + (end.x - start.x) * segmentProgress,
-        y: start.y + (end.y - start.y) * segmentProgress,
+        y: 0.75, // Keep bus at road level
         z: start.z + (end.z - start.z) * segmentProgress,
       };
+
+      // Calculate rotation based on direction of movement
+      const dx = end.x - start.x;
+      const dz = end.z - start.z;
+      const rotation = Math.atan2(dx, dz);
 
       const update: TelemetryUpdate = {
         timestamp: Date.now(),
         position,
+        rotation,
         velocity: 2.5, // m/s
         autonomyState: 'autonomous',
         stuckReason: null,
@@ -86,6 +112,16 @@ class TelemetryService {
       currentStep++;
     }, movementInterval);
   }
+
+  // Stop any ongoing movement
+  stopMovement() {
+    if (this.movementIntervalId) {
+      clearInterval(this.movementIntervalId);
+      this.movementIntervalId = null;
+    }
+  }
+
+  private movementIntervalId: NodeJS.Timeout | null = null;
 }
 
 export const telemetryService = new TelemetryService();

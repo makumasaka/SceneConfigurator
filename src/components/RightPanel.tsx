@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { AlertCircle, Battery, Gauge, Settings, Send, Trash2, Undo, Pen } from 'lucide-react';
+import { AlertCircle, Battery, Gauge, Settings, Send, Trash2, Undo, Pen, Play } from 'lucide-react';
 import { useOperatorStore } from '../store/useOperatorStore';
 import { plannerService } from '../services/plannerService';
+import { telemetryService } from '../services/telemetryService';
 
 export function RightPanel() {
   const heroBus = useOperatorStore((state) => state.heroBus);
@@ -12,9 +13,11 @@ export function RightPanel() {
   const clearPath = useOperatorStore((state) => state.clearPath);
   const removeLastPathPoint = useOperatorStore((state) => state.removeLastPathPoint);
   const setPathStatus = useOperatorStore((state) => state.setPathStatus);
+  const setHeroBus = useOperatorStore((state) => state.setHeroBus);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
 
   const getAutonomyStateColor = () => {
     switch (heroBus.autonomyState) {
@@ -44,6 +47,11 @@ export function RightPanel() {
         setPathStatus('accepted');
         setResponseMessage(`Path accepted! ETA: ${response.estimatedTime}s`);
         setIsDrawingPath(false);
+        
+        // Automatically start vehicle movement after acceptance
+        setTimeout(() => {
+          handleExecutePath();
+        }, 500);
       } else {
         setPathStatus('rejected');
         setResponseMessage(response.message);
@@ -53,6 +61,43 @@ export function RightPanel() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleExecutePath = () => {
+    if (!currentPath || currentPath.points.length < 2) return;
+
+    setIsExecuting(true);
+    setResponseMessage('Executing path...');
+
+    // Update bus state to show it's moving
+    setHeroBus({
+      autonomyState: 'autonomous',
+      stuckReason: null,
+      velocity: 2.5,
+    });
+
+    // Convert path points to position array
+    const pathPositions = currentPath.points.map(p => ({
+      x: p.position.x,
+      y: p.position.y,
+      z: p.position.z,
+    }));
+
+    // Calculate duration based on path length (2 seconds per point)
+    const duration = currentPath.points.length * 2000;
+
+    // Start simulated movement
+    telemetryService.simulateMovement(pathPositions, duration);
+
+    // After movement completes
+    setTimeout(() => {
+      setIsExecuting(false);
+      setResponseMessage('Path execution complete!');
+      setHeroBus({
+        velocity: 0,
+        autonomyState: 'autonomous',
+      });
+    }, duration);
   };
 
   return (
@@ -217,17 +262,41 @@ export function RightPanel() {
             </>
           )}
 
-          {currentPath && currentPath.status === 'accepted' && (
-            <button
-              onClick={() => {
-                clearPath();
-                setResponseMessage(null);
-              }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-all"
-            >
-              <Trash2 size={16} />
-              <span className="text-sm font-medium">Clear Accepted Path</span>
-            </button>
+          {currentPath && currentPath.status === 'accepted' && !isExecuting && (
+            <div className="space-y-2">
+              <button
+                onClick={handleExecutePath}
+                disabled={isExecuting}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <Play size={16} />
+                <span className="text-sm font-medium">Execute Path Manually</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  clearPath();
+                  setResponseMessage(null);
+                  telemetryService.stopMovement();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-all"
+              >
+                <Trash2 size={16} />
+                <span className="text-sm font-medium">Clear Path</span>
+              </button>
+            </div>
+          )}
+
+          {isExecuting && (
+            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                <div>
+                  <div className="text-sm text-green-400 font-medium">Executing Path</div>
+                  <div className="text-xs text-green-300 mt-1">Vehicle is following the guidance path</div>
+                </div>
+              </div>
+            </div>
           )}
 
           {!currentPath && !isDrawingPath && (

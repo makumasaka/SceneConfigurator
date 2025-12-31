@@ -2,23 +2,42 @@ import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import { useOperatorStore } from '../store/useOperatorStore';
+import * as THREE from 'three';
 
 export function HeroBus() {
   const busRef = useRef<Group>(null);
   const heroBus = useOperatorStore((state) => state.heroBus);
   const cameraMode = useOperatorStore((state) => state.cameraMode);
+  const targetPosition = useRef(new THREE.Vector3());
+  const targetRotation = useRef(0);
 
-  // Update bus position and rotation from store
+  // Update target position and rotation from store
   useEffect(() => {
-    if (busRef.current) {
-      busRef.current.position.set(
-        heroBus.position.x,
-        heroBus.position.y,
-        heroBus.position.z
-      );
-      busRef.current.rotation.y = heroBus.rotation;
-    }
+    targetPosition.current.set(
+      heroBus.position.x,
+      heroBus.position.y,
+      heroBus.position.z
+    );
+    targetRotation.current = heroBus.rotation;
   }, [heroBus.position, heroBus.rotation]);
+
+  // Smoothly interpolate to target position and rotation
+  useFrame(() => {
+    if (busRef.current) {
+      // Smooth position interpolation
+      busRef.current.position.lerp(targetPosition.current, 0.1);
+      
+      // Smooth rotation interpolation
+      const currentRotation = busRef.current.rotation.y;
+      let targetRot = targetRotation.current;
+      
+      // Handle rotation wrapping
+      while (targetRot - currentRotation > Math.PI) targetRot -= Math.PI * 2;
+      while (targetRot - currentRotation < -Math.PI) targetRot += Math.PI * 2;
+      
+      busRef.current.rotation.y += (targetRot - currentRotation) * 0.1;
+    }
+  });
 
   // Optional: Smooth camera follow in follow mode
   useFrame(({ camera }) => {
