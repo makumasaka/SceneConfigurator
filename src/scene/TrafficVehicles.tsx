@@ -8,6 +8,7 @@ interface Vehicle {
   lane: number;
   startZ: number;
   speed: number;
+  direction: 1 | -1; // 1 = forward (positive Z), -1 = backward (negative Z)
   color: string;
 }
 
@@ -17,16 +18,24 @@ export function TrafficVehicles() {
 
   const vehicles = useMemo<Vehicle[]>(() => {
     const vehicleList: Vehicle[] = [];
-    const numVehicles = 6;
-    const lanes = [-5.25, -1.75, 1.75, 5.25]; // Four lane positions
-    const colors = ['#3498DB', '#9B59B6', '#E67E22', '#1ABC9C'];
+    const numVehicles = 8;
+    // Four lanes: negative X = left side (go backward), positive X = right side (go forward)
+    const leftLanes = [-5.25, -1.75];  // Travel in negative Z direction (backward)
+    const rightLanes = [1.75, 5.25];   // Travel in positive Z direction (forward)
+    const colors = ['#3498DB', '#9B59B6', '#E67E22', '#1ABC9C', '#E74C3C', '#F39C12'];
 
     for (let i = 0; i < numVehicles; i++) {
+      const isRightSide = i % 2 === 0;
+      const lanes = isRightSide ? rightLanes : leftLanes;
+      const lane = lanes[(i >> 1) % lanes.length];
+      const direction = isRightSide ? 1 : -1;
+      
       vehicleList.push({
         id: i,
-        lane: lanes[i % lanes.length],
-        startZ: (i * -15) - 30,
+        lane,
+        startZ: direction === 1 ? ((i * -15) - 30) : ((i * 15) + 30),
         speed: 0.8 + Math.random() * 0.4,
+        direction,
         color: colors[i % colors.length],
       });
     }
@@ -34,16 +43,26 @@ export function TrafficVehicles() {
     return vehicleList;
   }, []);
 
-  useFrame((state) => {
+  useFrame(() => {
     const roadLength = 60;
     vehicleRefs.current.forEach((ref, i) => {
       if (ref && vehicles[i]) {
-        // Move vehicle forward
-        ref.position.z += vehicles[i].speed * 0.1;
+        const vehicle = vehicles[i];
+        
+        // Move vehicle in its direction
+        ref.position.z += vehicle.speed * 0.1 * vehicle.direction;
 
         // Loop back when out of bounds
-        if (ref.position.z > roadLength / 2 + 10) {
-          ref.position.z = -roadLength / 2 - 10;
+        if (vehicle.direction === 1) {
+          // Going forward (positive Z)
+          if (ref.position.z > roadLength / 2 + 10) {
+            ref.position.z = -roadLength / 2 - 10;
+          }
+        } else {
+          // Going backward (negative Z)
+          if (ref.position.z < -roadLength / 2 - 10) {
+            ref.position.z = roadLength / 2 + 10;
+          }
         }
       }
     });
@@ -60,6 +79,7 @@ export function TrafficVehicles() {
             vehicleRefs.current[i] = el;
           }}
           position={[vehicle.lane, 0.6, vehicle.startZ]}
+          rotation={[0, vehicle.direction === 1 ? 0 : Math.PI, 0]} // Rotate 180° if going backward
         >
           <mesh castShadow>
             <boxGeometry args={[1.6, 1.2, 3.2]} />
