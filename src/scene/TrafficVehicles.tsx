@@ -15,6 +15,7 @@ interface Vehicle {
 export function TrafficVehicles() {
   const vehicleRefs = useRef<(Group | null)[]>([]);
   const sceneLayerToggles = useOperatorStore((state) => state.sceneLayerToggles);
+  const heroBus = useOperatorStore((state) => state.heroBus);
 
   const vehicles = useMemo<Vehicle[]>(() => {
     const vehicleList: Vehicle[] = [];
@@ -43,27 +44,70 @@ export function TrafficVehicles() {
     return vehicleList;
   }, []);
 
+  // Helper function to determine if a vehicle is in the same lane as the bus
+  const isInSameLane = (vehicleLane: number, busX: number) => {
+    // Allow 2 meter tolerance for lane matching
+    return Math.abs(vehicleLane - busX) < 2;
+  };
+
+  // Helper function to check if vehicle is at risk of collision
+  const isAtRiskOfCollision = (
+    vehicleZ: number,
+    vehicleDirection: number,
+    busZ: number,
+    vehicleLane: number
+  ) => {
+    if (!isInSameLane(vehicleLane, heroBus.position.x)) {
+      return false;
+    }
+
+    const safeDistance = 8; // meters
+    const distanceToBus = Math.abs(vehicleZ - busZ);
+
+    if (vehicleDirection === 1) {
+      // Vehicle going forward (positive Z direction)
+      // Stop if vehicle is behind bus and within safe distance
+      return vehicleZ < busZ && distanceToBus < safeDistance;
+    } else {
+      // Vehicle going backward (negative Z direction)
+      // Stop if vehicle is ahead of bus (in its travel direction) and within safe distance
+      return vehicleZ > busZ && distanceToBus < safeDistance;
+    }
+  };
+
   useFrame(() => {
     const roadLength = 60;
     vehicleRefs.current.forEach((ref, i) => {
       if (ref && vehicles[i]) {
         const vehicle = vehicles[i];
         
-        // Move vehicle in its direction
-        ref.position.z += vehicle.speed * 0.1 * vehicle.direction;
+        // Check if this vehicle is at risk of collision with the bus
+        const shouldStop = isAtRiskOfCollision(
+          ref.position.z,
+          vehicle.direction,
+          heroBus.position.z,
+          vehicle.lane
+        );
 
-        // Loop back when out of bounds
-        if (vehicle.direction === 1) {
-          // Going forward (positive Z)
-          if (ref.position.z > roadLength / 2 + 10) {
-            ref.position.z = -roadLength / 2 - 10;
-          }
-        } else {
-          // Going backward (negative Z)
-          if (ref.position.z < -roadLength / 2 - 10) {
-            ref.position.z = roadLength / 2 + 10;
+        // Only move if not at risk of collision
+        if (!shouldStop) {
+          // Move vehicle in its direction
+          ref.position.z += vehicle.speed * 0.1 * vehicle.direction;
+
+          // Loop back when out of bounds
+          if (vehicle.direction === 1) {
+            // Going forward (positive Z)
+            if (ref.position.z > roadLength / 2 + 10) {
+              ref.position.z = -roadLength / 2 - 10;
+            }
+          } else {
+            // Going backward (negative Z)
+            if (ref.position.z < -roadLength / 2 - 10) {
+              ref.position.z = roadLength / 2 + 10;
+            }
           }
         }
+        // If shouldStop is true, vehicle stays in place (collision avoidance)
       }
     });
   });

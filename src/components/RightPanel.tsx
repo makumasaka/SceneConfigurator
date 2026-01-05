@@ -106,8 +106,8 @@ export function RightPanel() {
       <div>
         <div className="text-xs text-gray-500 tracking-wider uppercase mb-3">
           Hero Bus Status
-        </div>
-
+      </div>
+      
         <div className="bg-gray-900 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-400">Autonomy State</span>
@@ -119,7 +119,7 @@ export function RightPanel() {
           {heroBus.stuckReason && (
             <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
               <AlertCircle size={16} className="text-red-500 mt-0.5" />
-              <div>
+            <div>
                 <div className="text-sm text-red-400 font-medium">Stuck Reason</div>
                 <div className="text-xs text-red-300 mt-1">
                   {heroBus.stuckReason.replace(/_/g, ' ')}
@@ -127,15 +127,15 @@ export function RightPanel() {
               </div>
             </div>
           )}
-
+            
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-400">Velocity</span>
             <div className="flex items-center gap-2">
               <Gauge size={14} className="text-gray-500" />
               <span className="text-sm text-white">{heroBus.velocity.toFixed(1)} m/s</span>
+              </div>
             </div>
-          </div>
-
+            
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-400">Gear</span>
             <div className="flex items-center gap-2">
@@ -150,8 +150,8 @@ export function RightPanel() {
               <Battery size={14} className="text-gray-500" />
               <span className="text-sm text-white">{Math.round(heroBus.batteryLevel)}%</span>
             </div>
-          </div>
-
+            </div>
+            
           <div className="pt-3 border-t border-gray-800">
             <div className="text-xs text-gray-500 mb-2">Position</div>
             <div className="font-mono text-xs text-gray-400 space-y-1">
@@ -162,7 +162,7 @@ export function RightPanel() {
           </div>
         </div>
       </div>
-
+        
       {/* Path Suggestion Controls */}
       <div className="pt-6 border-t border-gray-800">
         <div className="text-xs text-gray-500 tracking-wider uppercase mb-3">
@@ -200,9 +200,9 @@ export function RightPanel() {
                 : 'bg-red-500/10 text-red-400 border border-red-500/20'
             }`}>
               {responseMessage}
-            </div>
-          )}
-
+          </div>
+        )}
+        
           <button
             onClick={() => {
               if (isDrawingPath) {
@@ -286,12 +286,12 @@ export function RightPanel() {
               </button>
             </div>
           )}
-
+            
           {isExecuting && (
             <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                <div>
+            <div>
                   <div className="text-sm text-green-400 font-medium">Executing Path</div>
                   <div className="text-xs text-green-300 mt-1">Vehicle is following the guidance path</div>
                 </div>
@@ -304,7 +304,7 @@ export function RightPanel() {
               Click "Draw Path" to create a guidance suggestion
             </div>
           )}
-        </div>
+          </div>
       </div>
     </div>
   );

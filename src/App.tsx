@@ -33,7 +33,7 @@ export default function App() {
       }
       if (update.velocity !== undefined) {
         updates.velocity = update.velocity;
-      }
+    }
       if (update.autonomyState) {
         updates.autonomyState = update.autonomyState;
       }

@@ -63,7 +63,7 @@ export function LeftPanel() {
             <div className="flex items-center gap-3">
               <Users size={16} />
               <span className="text-sm">Pedestrians</span>
-            </div>
+              </div>
             <div className={`w-2 h-2 rounded-full ${sceneLayerToggles.pedestrians ? 'bg-green-500' : 'bg-gray-600'}`} />
           </button>
           
@@ -108,7 +108,7 @@ export function LeftPanel() {
             <div className="flex items-center gap-3">
               <AlertTriangle size={16} />
               <span className="text-sm">Obstacles</span>
-            </div>
+              </div>
             <div className={`w-2 h-2 rounded-full ${sceneLayerToggles.obstacles ? 'bg-green-500' : 'bg-gray-600'}`} />
           </button>
           
@@ -134,16 +134,16 @@ export function LeftPanel() {
           Demo Scenarios
         </div>
         
-        <button
+          <button
           onClick={loadStuckScenario}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 bg-gray-800 hover:bg-gray-700 hover:text-white transition-all"
-        >
+          >
           <AlertTriangle size={18} />
           <div className="text-left">
             <div className="text-sm font-medium">Blocked Lane</div>
             <div className="text-xs text-gray-400">Load stuck scenario</div>
           </div>
-        </button>
+          </button>
       </div>
     </div>
   );
