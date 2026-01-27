@@ -7,6 +7,8 @@ import type {
   CameraMode,
   SceneLayerToggles,
   PathStatus,
+  DistanceMeasurement,
+  Vector3D,
 } from '../types';
 
 interface OperatorStore {
@@ -37,6 +39,11 @@ interface OperatorStore {
   toggleSceneLayer: (layer: keyof SceneLayerToggles) => void;
   isDrawingPath: boolean;
   setIsDrawingPath: (value: boolean) => void;
+  isMeasuringDistance: boolean;
+  setIsMeasuringDistance: (value: boolean) => void;
+  distanceMeasurement: DistanceMeasurement | null;
+  addDistancePoint: (position: Vector3D) => void;
+  clearDistanceMeasurement: () => void;
   
   // Demo Scenario
   loadStuckScenario: () => void;
@@ -191,6 +198,35 @@ export const useOperatorStore = create<OperatorStore>((set, get) => ({
   
   isDrawingPath: false,
   setIsDrawingPath: (value) => set({ isDrawingPath: value }),
+
+  isMeasuringDistance: false,
+  setIsMeasuringDistance: (value) => set({ isMeasuringDistance: value }),
+  distanceMeasurement: null,
+  addDistancePoint: (position) =>
+    set((state) => {
+      if (!state.distanceMeasurement || state.distanceMeasurement.points.length >= 2) {
+        return {
+          distanceMeasurement: {
+            points: [position],
+            distance: null,
+          },
+        };
+      }
+
+      const [firstPoint] = state.distanceMeasurement.points;
+      const dx = firstPoint.x - position.x;
+      const dy = firstPoint.y - position.y;
+      const dz = firstPoint.z - position.z;
+      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      return {
+        distanceMeasurement: {
+          points: [firstPoint, position],
+          distance,
+        },
+      };
+    }),
+  clearDistanceMeasurement: () => set({ distanceMeasurement: null }),
   
   // Demo Scenario
   loadStuckScenario: () =>

@@ -1,11 +1,18 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import type { ThreeEvent } from '@react-three/fiber';
 import { useOperatorStore } from '../store/useOperatorStore';
 
-export function Environment() {
+export function Environment({ onPointerDown }: { onPointerDown?: (event: ThreeEvent<PointerEvent>) => void }) {
   const sceneLayerToggles = useOperatorStore((state) => state.sceneLayerToggles);
 
   const trees = useMemo(() => {
-    const treeList = [];
+    const treeList: {
+      id: number;
+      position: [number, number, number];
+      scale: number;
+      trunkHeight: number;
+      foliageRadius: number;
+    }[] = [];
     const numTrees = 24;
     const minRadius = 20;
     const maxRadius = 40;
@@ -31,7 +38,7 @@ export function Environment() {
   if (!sceneLayerToggles.foliage) return null;
 
   return (
-    <group>
+    <group onPointerDown={onPointerDown}>
       {trees.map((tree) => (
         <group key={tree.id} position={tree.position} scale={tree.scale}>
           {/* Trunk */}

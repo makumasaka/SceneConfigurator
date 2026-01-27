@@ -41,6 +41,12 @@ export interface PathSuggestion {
   submittedAt: number | null;
 }
 
+// Distance Measurement
+export interface DistanceMeasurement {
+  points: Vector3D[];
+  distance: number | null;
+}
+
 // Obstacle Types
 export type ObstacleType = 'cone' | 'barrier' | 'debris' | 'vehicle';
 
@@ -70,6 +76,7 @@ export interface UIState {
   cameraMode: CameraMode;
   sceneLayerToggles: SceneLayerToggles;
   isDrawingPath: boolean;
+  isMeasuringDistance: boolean;
 }
 
 // Telemetry Update (from mock backend)

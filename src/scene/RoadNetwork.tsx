@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import type { ThreeEvent } from '@react-three/fiber';
 
-function RoadGroup() {
+function RoadGroup({ onPointerDown }: { onPointerDown?: (event: ThreeEvent<PointerEvent>) => void }) {
   // Create road markings
   const laneMarkings = useMemo(() => {
-    const markings = [];
+    const markings: { key: string; position: [number, number, number] }[] = [];
     const roadLength = 60;
     const numMarkings = 20;
     
@@ -21,14 +22,15 @@ function RoadGroup() {
     const sidewalkWidth = 3;
     const roadLength = 60;
     
-    return [
+    const sidewalkList: { position: [number, number, number]; width: number; length: number }[] = [
       { position: [(roadWidth / 2 + sidewalkWidth / 2), 0.05, 0], width: sidewalkWidth, length: roadLength },
       { position: [-(roadWidth / 2 + sidewalkWidth / 2), 0.05, 0], width: sidewalkWidth, length: roadLength },
     ];
+    return sidewalkList;
   }, []);
 
   return (
-    <group>
+    <group onPointerDown={onPointerDown}>
       {/* Main road - 4 lanes */}
       <mesh receiveShadow position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <boxGeometry args={[14, 60, 0.3]} />
@@ -81,9 +83,9 @@ function RoadGroup() {
   );
 }
 
-export function RoadNetwork() {
+export function RoadNetwork({ onPointerDown }: { onPointerDown?: (event: ThreeEvent<PointerEvent>) => void }) {
   return (
-    <group>
+    <group onPointerDown={onPointerDown}>
       {/* Ground plane */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[120, 120]} />
@@ -91,11 +93,11 @@ export function RoadNetwork() {
       </mesh>
 
       {/* First road group */}
-      <RoadGroup />
+      <RoadGroup onPointerDown={onPointerDown} />
 
       {/* Second road group - translated by 50 on y-axis (vertically) and rotated 90 degrees on y-axis */}
       <group position={[0, 7, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <RoadGroup />
+        <RoadGroup onPointerDown={onPointerDown} />
       </group>
     </group>
   );

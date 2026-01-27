@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, Battery, Gauge, Settings, Send, Trash2, Undo, Pen, Play } from 'lucide-react';
+import { AlertCircle, Battery, Gauge, Settings, Send, Trash2, Undo, Pen, Play, Ruler } from 'lucide-react';
 import { useOperatorStore } from '../store/useOperatorStore';
 import { plannerService } from '../services/plannerService';
 import { telemetryService } from '../services/telemetryService';
@@ -9,11 +9,15 @@ export function RightPanel() {
   const currentPath = useOperatorStore((state) => state.currentPath);
   const isDrawingPath = useOperatorStore((state) => state.isDrawingPath);
   const setIsDrawingPath = useOperatorStore((state) => state.setIsDrawingPath);
+  const isMeasuringDistance = useOperatorStore((state) => state.isMeasuringDistance);
+  const setIsMeasuringDistance = useOperatorStore((state) => state.setIsMeasuringDistance);
+  const distanceMeasurement = useOperatorStore((state) => state.distanceMeasurement);
   const submitPath = useOperatorStore((state) => state.submitPath);
   const clearPath = useOperatorStore((state) => state.clearPath);
   const removeLastPathPoint = useOperatorStore((state) => state.removeLastPathPoint);
   const setPathStatus = useOperatorStore((state) => state.setPathStatus);
   const setHeroBus = useOperatorStore((state) => state.setHeroBus);
+  const clearDistanceMeasurement = useOperatorStore((state) => state.clearDistanceMeasurement);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
@@ -209,6 +213,7 @@ export function RightPanel() {
                 setIsDrawingPath(false);
               } else {
                 setIsDrawingPath(true);
+                setIsMeasuringDistance(false);
                 setResponseMessage(null);
               }
             }}
@@ -223,6 +228,57 @@ export function RightPanel() {
               {isDrawingPath ? 'Drawing Path...' : 'Draw Path'}
             </span>
           </button>
+
+          <button
+            onClick={() => {
+              if (isMeasuringDistance) {
+                setIsMeasuringDistance(false);
+              } else {
+                setIsMeasuringDistance(true);
+                setIsDrawingPath(false);
+                setResponseMessage(null);
+              }
+            }}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+              isMeasuringDistance
+                ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+            }`}
+          >
+            <Ruler size={16} />
+            <span className="text-sm font-medium">
+              {isMeasuringDistance ? 'Measuring Distance...' : 'Measure Distance'}
+            </span>
+          </button>
+
+          {isMeasuringDistance && (
+            <div className="bg-gray-900 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Points</span>
+                <span className="text-sm text-white">
+                  {distanceMeasurement?.points.length ?? 0} / 2
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Distance</span>
+                <span className="text-sm text-white">
+                  {distanceMeasurement?.distance !== null && distanceMeasurement?.distance !== undefined
+                    ? `${distanceMeasurement.distance.toFixed(2)} m`
+                    : '--'}
+                </span>
+              </div>
+              <button
+                onClick={clearDistanceMeasurement}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-all"
+              >
+                <Trash2 size={14} />
+                <span className="text-xs">Clear Measurement</span>
+              </button>
+              <div className="text-xs text-gray-500 text-center">
+                Click two points in the scene to measure
+              </div>
+            </div>
+          )}
 
           {currentPath && currentPath.status === 'draft' && (
             <>

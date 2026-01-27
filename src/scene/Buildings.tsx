@@ -1,8 +1,16 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import type { ThreeEvent } from '@react-three/fiber';
 
-export function Buildings() {
+export function Buildings({ onPointerDown }: { onPointerDown?: (event: ThreeEvent<PointerEvent>) => void }) {
   const buildings = useMemo(() => {
-    const buildingList = [];
+    const buildingList: {
+      id: number;
+      position: [number, number, number];
+      width: number;
+      height: number;
+      depth: number;
+      color: string;
+    }[] = [];
     const numBuildings = 16;
     const radius = 25;
 
@@ -25,7 +33,7 @@ export function Buildings() {
   }, []);
 
   return (
-    <group>
+    <group onPointerDown={onPointerDown}>
       {buildings.map((building) => (
         <mesh
           key={building.id}
